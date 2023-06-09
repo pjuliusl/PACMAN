@@ -53,13 +53,14 @@ class Ghost {
       this.color = color
       this.prevCollisions = []
       this.speed = 2
+      this.scared = false
   }
   
   draw(){
       c.beginPath()
       c.arc(this.position.x, this.position.y,
            this.radius, 0, Math.PI * 2)
-      c.fillStyle = this.color
+      c.fillStyle = this.scared ? '#00008B' : this.color
       c.fill()
       c.closePath()
   }
@@ -87,8 +88,25 @@ class Pellet {
   }
 }
 
+class PowerUp {
+  constructor ({position}){
+      this.position = position
+      this.radius = 9
+  }
+  
+  draw(){
+      c.beginPath()
+      c.arc(this.position.x, this.position.y,
+           this.radius, 0, Math.PI * 2)
+      c.fillStyle = '#2BAE66'
+      c.fill()
+      c.closePath()
+  }
+}
+
 const pellets = []
 const boundaries = []
+const powerUps = []
 const ghosts = [
   new Ghost({
     position: {
@@ -356,6 +374,17 @@ map.forEach((row, i) => {
             })
           )
           break
+
+        case 'p':
+          powerUps.push(
+            new PowerUp({
+              position: {
+                x: j * Boundary.width + Boundary.width / 2,
+                y: i * Boundary.height + Boundary.height / 2
+              }
+            })
+          )
+          break
       }
     })
 })
@@ -470,8 +499,51 @@ function animate(){
             }
         }
     }
+    //detect collision between ghosts and player
+    for (let i = ghosts.length - 1; 0 <= i; i--){
+      const ghost = ghosts[i]
+
+      if (Math.hypot(
+        ghost.position.x - pacman.position.x,
+        ghost.position.y - pacman.position.y
+        )<
+        ghost.radius + pacman.radius
+      ) {
+
+        if (ghost.scared){
+          ghosts.splice(i, 1)
+        } else{
+        cancelAnimationFrame(animationId)
+        console.log('You lose')}
+      }
+    }
+    
+    // POWER UPS
+    for (let i = powerUps.length - 1; 0 <= i; i--){
+      const powerUp = powerUps [i]
+      powerUp.draw()
+
+      //PACMAN collides with POWER UPS
+      if (Math.hypot(
+        powerUp.position.x - pacman.position.x,
+        powerUp.position.y - pacman.position.y
+        )<
+        powerUp.radius + pacman.radius
+      ) {
+        powerUps.splice(i, 1)
+
+        ghosts.forEach(ghost =>{
+          ghost.scared = true
+
+          setTimeout(() =>{
+            ghost.scared = false
+          }, 5000)
+        })
+      }
+    }
+
     //Here we are touching pellets
-    for (let i = pellets.length - 1; 0 < i; i--){
+    for (let i = pellets.length - 1; 0 <= i; i--){
       const pellet = pellets[i]
       pellet.draw()
 
@@ -505,16 +577,6 @@ function animate(){
 
     ghosts.forEach(ghost => {
       ghost.update()
-
-      if (Math.hypot(
-        ghost.position.x - pacman.position.x,
-        ghost.position.y - pacman.position.y
-        )<
-        ghost.radius + pacman.radius
-      ) {
-        cancelAnimationFrame(animationId)
-        console.log('You lose')
-      }
 
       const collisions = []
       boundaries.forEach(boundary => {
