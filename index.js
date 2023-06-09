@@ -26,21 +26,39 @@ class Pacman {
         this.position = position
         this.velocity = velocity
         this.radius = 15
+        this.radians = 0.75
+        this.openRate = 0.12
+        this.rotation = 0
     }
     
     draw(){
-        c.beginPath()
-        c.arc(this.position.x, this.position.y,
-             this.radius, 0, Math.PI * 2)
-        c.fillStyle = 'yellow'
-        c.fill()
-        c.closePath()
+      c.save()
+      c.translate(this.position.x, this.position.y)
+      c.rotate(this.rotation)
+      c.translate(-this.position.x, -this.position.y)
+      c.beginPath()
+      c.arc(
+        this.position.x, 
+        this.position.y,
+        this.radius, 
+        this.radians, 
+        Math.PI * 2 - this.radians
+      )
+      c.lineTo(this.position.x, this.position.y)
+      c.fillStyle = 'yellow'
+      c.fill()
+      c.closePath()
+      c.restore()
     }
 
     update () {
-        this.draw()
-        this.position.x += this.velocity.x
-        this.position.y += this.velocity.y
+      this.draw()
+      this.position.x += this.velocity.x
+      this.position.y += this.velocity.y
+      
+      if (this.radians < 0 || this.radians > 0.75) this.openRate = -this.openRate
+
+      this.radians += this.openRate
     }
 }
 
@@ -517,6 +535,11 @@ function animate(){
         console.log('You lose')}
       }
     }
+    // win condition
+    if (pellets.length === 0){
+      console.log('You Win')
+      cancelAnimationFrame(animationId)
+    }
     
     // POWER UPS
     for (let i = powerUps.length - 1; 0 <= i; i--){
@@ -685,6 +708,11 @@ function animate(){
         ghost.prevCollisions = []
       }
     })
+
+    if (pacman.velocity.x > 0) pacman.rotation = 0
+    else if (pacman.velocity.x < 0) pacman.rotation = Math.PI
+    else if (pacman.velocity.y > 0) pacman.rotation = Math.PI / 2
+    else if (pacman.velocity.y < 0) pacman.rotation = Math.PI * 1.5
 }
 
 animate()
