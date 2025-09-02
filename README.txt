@@ -1,1 +1,1 @@
-Just a learnig project.
+Just a learning project.
